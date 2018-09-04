@@ -1,45 +1,49 @@
 # Coursera Getting and Cleaning Data Final Project
 library(dplyr)
 
-# Merge the training and test sets to create one data set
+# Load the files and rename columns based on their activity labels.
+# Activities value
+activities <- read.table('./UCI HAR Dataset/activity_labels.txt')
+features <- read.table('./UCI HAR Dataset/features.txt')
 
-# Load the files, renaming the columns for the subject & y data to avoid naming issues
 subject.training.data <- read.table('./UCI HAR Dataset/train/subject_train.txt')
-names(subject.training.data) <- "Activity"
-
-y.training.data <- read.table('./UCI HAR Dataset/train/y_train.txt')
-names(y.training.data) <- "Result"
-
 subject.testing.data <- read.table('./UCI HAR Dataset/test/subject_test.txt')
-names(subject.testing.data) <- "Activity"
-
-y.testing.data <- read.table('./UCI HAR Dataset/test/y_test.txt')
-names(y.testing.data) <- "Result"
+subject.data <- rbind(subject.training.data, subject.testing.data)
+names(subject.data) <- "SubjectID"
 
 x.training.data <- read.table('./UCI HAR Dataset/train/X_train.txt')
 x.testing.data <- read.table('./UCI HAR Dataset/test/X_test.txt')
+x.data <- rbind(x.training.data, x.testing.data)
+names(x.data) <- features$V2
 
-activites <- read.table('./UCI HAR Dataset/activity_labels.txt')
-features <- read.table('./UCI HAR Dataset/features.txt')
-
-# Combine the training data tables by column, same w/ testing data
-# Combine the training and testing data together by rows
-training.data <- cbind(subject.training.data, x.training.data, y.training.data)
-testing.data <- cbind(subject.testing.data, x.testing.data, y.testing.data)
-unfiltered.data.set <- rbind(training.data, testing.data)
+y.training.data <- read.table('./UCI HAR Dataset/train/y_train.txt')
+y.testing.data <- read.table('./UCI HAR Dataset/test/y_test.txt')
+y.data <-
+  rbind(y.training.data, y.testing.data)
+#  lapply(FUN = function (x) {gsub(x, activities$V2[x], x)})
+names(y.data) <- "Activity"
+# Merge the training and testing data together.
+unfiltered.data.set <- cbind(subject.data, x.data, y.data)
 
 # Generate list of columns to keep
 mean.std.features <- grep("mean|std", features$V2, ignore.case = TRUE)
-mean.std.features <- sapply(mean.std.features,
-                            function (x) {paste0("V", as.character(x))})
-
-# Replace the V-names with their matching activity label
-
-
-# Add the Activity and Result column names
-mean.std.features <- append(mean.std.features, "Activity", 0)
-mean.std.features <- append(mean.std.features, "Result")
 
 # Filter data set accordingly and then rename it
-filtered.data.set <- unfiltered.data.set[, mean.std.features]
-names(filtered.data.set) <- mean.std.features
+filtered.data.set <-
+  cbind(subject.data, x.data[, mean.std.features], y.data) %>%
+  as_tibble
+
+# Replace activity labels with their values.
+filtered.data.set$Activity <- factor(filtered.data.set$Activity,
+                                     levels = activities[,1],
+                                     labels = activities[,2])
+
+# Create an independent table that has the mean of each activity and subject
+filtered.data.set$SubjectID <- factor(filtered.data.set$SubjectID)
+
+avg.data.set <-
+  filtered.data.set %>%
+  group_by(SubjectID, Activity) %>%
+  summarise_all(mean)
+
+write.csv(avg.data.set, "summarised-data.csv", row.names = FALSE)

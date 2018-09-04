@@ -46,7 +46,7 @@ avg.data.set <-
   group_by(SubjectID, Activity) %>%
   summarise_all(mean)
 
-write.csv(avg.data.set, "summarised-data.csv", row.names = FALSE)
+write.table(avg.data.set, "summarised-data.txt", row.names = FALSE)
 
 # Create and save a code book.
 code.book <-

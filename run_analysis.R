@@ -47,3 +47,11 @@ avg.data.set <-
   summarise_all(mean)
 
 write.csv(avg.data.set, "summarised-data.csv", row.names = FALSE)
+
+# Create and save a code book.
+code.book <-
+  data.frame(names(avg.data.set),
+             gsub("-*|\\(*|mean|std|Mean|\\)*", "", names(avg.data.set)))
+
+names(code.book) <- c("Column Name", "Feature Representation")
+write.csv(code.book, "CodeBook.csv", row.names = FALSE)
